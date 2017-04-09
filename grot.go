@@ -13,15 +13,19 @@ import (
 )
 
 const lineBufferSize = 10000
-const maxLogs = 9
 
-var every = flag.Duration("every", 1*time.Minute, "How often to rotate")
-var outputFile = flag.String("to", "output.log", "Output file to write to")
+const defaultDuration = 1 * time.Minute
+const defaultOutputFile = "output.log"
+const defaultMaxLogs = 9
+
+var every = flag.Duration("every", defaultDuration, "How often to rotate")
+var outputFile = flag.String("to", defaultOutputFile, "Output file to write to")
+var maxLogs = flag.Int("max", defaultMaxLogs, "How many logs to keep")
 
 func main() {
 	log.SetPrefix("grot")
-
 	flag.Parse()
+
 	lines := setupInputChannel(os.Stdin)
 	handleOutput(*outputFile, *every, lines)
 }
@@ -34,7 +38,7 @@ func mustCloseFile(fileH *os.File, panicMsg string) {
 }
 
 func handleOutput(filename string, every time.Duration, input <-chan string) {
-	fileH, err := rotate(filename, maxLogs)
+	fileH, err := rotate(filename, *maxLogs)
 	if err != nil {
 		log.Panicf("could not perform initial rotation: %v", err)
 	}
@@ -60,7 +64,7 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 
 			mustCloseFile(fileH, fmt.Sprintf("Could not close file on rotation: %v", err))
 
-			fileH, err = rotate(filename, maxLogs)
+			fileH, err = rotate(filename, *maxLogs)
 			if err != nil {
 				log.Panicf("error while performing rotation: %v", err)
 			}
