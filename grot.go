@@ -26,6 +26,13 @@ func main() {
 	handleOutput(*outputFile, *every, lines)
 }
 
+func mustCloseFile(fileH *os.File, panicMsg string) {
+	err := fileH.Close()
+	if err != nil {
+		log.Panicf("%s: %v", panicMsg, err)
+	}
+}
+
 func handleOutput(filename string, every time.Duration, input <-chan string) {
 	fileH, err := rotate(filename, maxLogs)
 	if err != nil {
@@ -38,10 +45,7 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 		select {
 		case line, ok := <-input:
 			if !ok {
-				err = fileH.Close()
-				if err != nil {
-					log.Panicf("Could not close file: %v", err)
-				}
+				mustCloseFile(fileH, fmt.Sprintf("Could not close file"))
 				return
 			}
 			_, err := writer.Write([]byte(line))
@@ -54,10 +58,7 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 				log.Panicf("Could not flush contents to file on rotation: %v", err)
 			}
 
-			err = fileH.Close()
-			if err != nil {
-				log.Panicf("Could not close file on rotation: %v", err)
-			}
+			mustCloseFile(fileH, fmt.Sprintf("Could not close file on rotation: %v", err))
 
 			fileH, err = rotate(filename, maxLogs)
 			if err != nil {
