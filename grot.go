@@ -86,22 +86,32 @@ func setupInputChannel(input io.Reader) <-chan string {
 	return lines
 }
 
-func rotate(filename string, keep int) (*os.File, error) {
+func listDirectory(dirPath string) (map[string]*os.FileInfo, error) {
 
-	// make sure filename is clean before we work with it
-	filename = filepath.Clean(filename)
-
-	// read directory
-	workingDir := filepath.Dir(filename)
+	workingDir := filepath.Clean(dirPath)
 	files, err := ioutil.ReadDir(workingDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not open directory %v: %v", workingDir, err)
 	}
 
 	// load files in a "set"
-	existingFiles := make(map[string]bool)
-	for _, file := range files {
-		existingFiles[file.Name()] = true
+	fileSet := make(map[string]*os.FileInfo)
+	for i := range files {
+		fileSet[files[i].Name()] = &files[i]
+	}
+
+	return fileSet, nil
+}
+
+func rotate(filename string, keep int) (*os.File, error) {
+
+	// make sure filename is clean before we work with it
+	filename = filepath.Clean(filename)
+
+	workingDir := filepath.Dir(filename)
+	existingFiles, err := listDirectory(workingDir)
+	if err != nil {
+		log.Panicf("Could not list list files: %v", err)
 	}
 
 	// perform rotation
@@ -111,7 +121,7 @@ func rotate(filename string, keep int) (*os.File, error) {
 		logAbsPath := filepath.Join(workingDir, logName)
 
 		// log doesn't exist yet. skip
-		if !existingFiles[logName] {
+		if _, ok := existingFiles[logName]; !ok {
 			continue
 		}
 
