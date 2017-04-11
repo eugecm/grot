@@ -43,7 +43,6 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 		log.Panicf("could not perform initial rotation: %v", err)
 	}
 
-	writer := bufio.NewWriter(fileH)
 	timer := time.NewTicker(every)
 	for {
 		select {
@@ -52,15 +51,12 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 				mustCloseFile(fileH, fmt.Sprintf("Could not close file"))
 				return
 			}
-			_, err := writer.Write([]byte(line))
+
+			_, err := fileH.WriteString(line)
 			if err != nil {
 				log.Panicf("An error occured while writing to %v: %v", filename, err)
 			}
 		case <-timer.C:
-			err := writer.Flush()
-			if err != nil {
-				log.Panicf("Could not flush contents to file on rotation: %v", err)
-			}
 
 			mustCloseFile(fileH, fmt.Sprintf("Could not close file on rotation: %v", err))
 
@@ -68,7 +64,6 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 			if err != nil {
 				log.Panicf("error while performing rotation: %v", err)
 			}
-			writer.Reset(fileH)
 		}
 	}
 }
