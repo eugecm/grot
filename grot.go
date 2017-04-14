@@ -48,17 +48,17 @@ func handleOutput(filename string, every time.Duration, input <-chan string) {
 		select {
 		case line, ok := <-input:
 			if !ok {
-				mustCloseFile(fileH, fmt.Sprintf("Could not close file"))
+				mustCloseFile(fileH, fmt.Sprintf("could not close file"))
 				return
 			}
 
 			_, err := fileH.WriteString(line)
 			if err != nil {
-				log.Panicf("An error occured while writing to %v: %v", filename, err)
+				log.Panicf("an error occured while writing to %v: %v", filename, err)
 			}
 		case <-timer.C:
 
-			mustCloseFile(fileH, fmt.Sprintf("Could not close file on rotation: %v", err))
+			mustCloseFile(fileH, fmt.Sprintf("could not close file on rotation: %v", err))
 
 			fileH, err = rotate(filename, *maxLogs)
 			if err != nil {
@@ -110,7 +110,7 @@ func rotate(filename string, keep int) (*os.File, error) {
 	workingDir := filepath.Dir(filename)
 	existingFiles, err := listDirectory(workingDir)
 	if err != nil {
-		log.Panicf("Could not list list files: %v", err)
+		log.Panicf("could not list files: %v", err)
 	}
 
 	// perform rotation
